@@ -1,0 +1,7 @@
+/target
+
+/src/test_files
+
+.idea
+*.zrs
+out/
