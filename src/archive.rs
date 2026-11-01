@@ -1,7 +1,6 @@
-use std::fs::{metadata, Metadata, File};
+use std::fs::{metadata, Metadata};
 use std::io::{Error, Read, Write};
 use std::path::Path;
-use std::sync::Arc;
 
 #[derive(Debug)]
 pub struct ArchiveFormat {
