@@ -1,11 +1,14 @@
 use std::fs::{read, File};
 use std::io::{Error, Write};
 use std::path::PathBuf;
+use jiff::Timestamp;
+
 use crate::archive::{build_archive_entry, ArchiveFormat};
 
 pub fn encode_archive(paths: Vec<PathBuf>, output: Option<PathBuf>) -> Result<(), Error> {
     let mut archive_entries: Vec<ArchiveFormat> = Vec::new();
-    let output_folder = output.unwrap_or_else(|| PathBuf::from("out"));
+    let output_folder = output.unwrap_or_else(|| PathBuf::from(format!("out{:}", Timestamp::now()
+        .strftime("%Y%m%d-%H%M"))));
 
     for path in paths {
 

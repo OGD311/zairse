@@ -1,12 +1,17 @@
 use std::fs::{create_dir, File};
 use std::io::{BufReader, Error, Read, Write};
 use std::path::PathBuf;
+use jiff::Timestamp;
 use crate::archive::ArchiveFormat;
 
 pub fn decode_archive(paths: Vec<PathBuf>) -> Result<(), Error> {
     for path in paths {
-        let output_folder_name = path.file_name().unwrap_or_else(|| "out".as_ref()).to_str()
-            .unwrap().replace(".zrs", "");
+        let output_folder_name = path.file_name()
+            .and_then(|f| f.to_str())
+            .map(|f| f.replace(".zrs", ""))
+            .unwrap_or_else(|| format!("out{:}", Timestamp::now()
+                .strftime("%Y%m%d-%H%M")));
+
 
         match create_dir(output_folder_name.clone()) {
             Ok(_) => {}
