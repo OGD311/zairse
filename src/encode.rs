@@ -3,8 +3,9 @@ use std::io::{Error, Write};
 use std::path::PathBuf;
 use crate::archive::{build_archive_entry, ArchiveFormat};
 
-pub fn encode_archive(paths: Vec<PathBuf>) -> Result<(), Error> {
+pub fn encode_archive(paths: Vec<PathBuf>, output: Option<PathBuf>) -> Result<(), Error> {
     let mut archive_entries: Vec<ArchiveFormat> = Vec::new();
+    let output_folder = output.unwrap_or_else(|| PathBuf::from("out"));
 
     for path in paths {
 
@@ -30,7 +31,7 @@ pub fn encode_archive(paths: Vec<PathBuf>) -> Result<(), Error> {
         archive_entries.push(archive_entry);
     }
 
-    let mut output = match File::create("out.zrs") {
+    let mut output = match File::create(output_folder.to_str().unwrap().to_string() + ".zrs") {
         Ok(file) => file,
         Err(error) => {
             return Err(error);
