@@ -73,7 +73,7 @@ pub fn build_archive_entry(file: &Path) -> Result<ArchiveFormat, Error> {
 
     let filename = file.to_str().unwrap().split('/').last().unwrap();
 
-    return Ok(ArchiveFormat {
+    Ok(ArchiveFormat {
         filename: filename.to_string(),
         file_size: file_metadata.len(),
         contents: None,
