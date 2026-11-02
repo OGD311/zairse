@@ -63,14 +63,7 @@ impl ArchiveFormat {
 
 
 pub fn build_archive_entry(file: &Path) -> Result<ArchiveFormat, Error> {
-    let mut file_metadata: Metadata =
-        match metadata(file.to_str().unwrap()) {
-            Ok(data) => data,
-            Err(error) => {
-                return Err(error);
-            }
-        };
-
+    let file_metadata: Metadata = metadata(file.to_str().unwrap())?;
     let filename = file.to_str().unwrap().split('/').last().unwrap();
 
     Ok(ArchiveFormat {
