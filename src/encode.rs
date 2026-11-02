@@ -1,4 +1,4 @@
-use std::fs::{read, File};
+use std::fs::{read, File, read_dir};
 use std::io::{Error, Write};
 use std::path::PathBuf;
 use jiff::Timestamp;
@@ -7,47 +7,36 @@ use crate::archive::{build_archive_entry, ArchiveFormat};
 
 pub fn encode_archive(paths: Vec<PathBuf>, output: Option<PathBuf>) -> Result<(), Error> {
     let mut archive_entries: Vec<ArchiveFormat> = Vec::new();
-    let output_folder = output.unwrap_or_else(|| PathBuf::from(format!("out{:}", Timestamp::now()
+    let mut pending_paths = paths;
+    let output_folder = output.unwrap_or_else(|| PathBuf::from(format!("out{}", Timestamp::now()
         .strftime("%Y%m%d-%H%M"))));
 
-    for path in paths {
+    while let Some(path) = pending_paths.pop() {
+        if path.is_dir() {
+            let dir_read = read_dir(path.clone())?;
 
-        let mut archive_entry =
-            match build_archive_entry(path.as_path()) {
-                Ok(archive_entry) => archive_entry,
-                Err(error) => {
-                    println!("Error: {}", error);
-                    return Err(error);
-                }
-            };
-
-        let mut file_data: Vec<u8> = Vec::new();
-        match read(path.as_path()) {
-            Ok(data) => file_data.extend(data),
-            Err(error) => {
-                return Err(error);
+            let files = dir_read.collect::<Result<Vec<_>, Error>>()?;
+            for file in files {
+                pending_paths.push(file.path());
             }
-        };
+            continue;
+        }
 
+        let mut archive_entry = build_archive_entry(path.as_path())?;
+
+        let mut file_data = read(path.as_path())?;
         archive_entry.contents = Some(file_data);
 
         archive_entries.push(archive_entry);
     }
 
-    let mut output = match File::create(output_folder.to_str().unwrap().to_string() + ".zrs") {
-        Ok(file) => file,
-        Err(error) => {
-            return Err(error);
-        }
-    };
+    let mut output =  File::create(format!("{}.zrs", output_folder.display()))?;
 
     let count = archive_entries.len() as u32;
     output.write_all(&count.to_le_bytes())?;
 
     for archive_entry in archive_entries {
-        if let Err(error) = archive_entry.serialize(&mut output) {
-            return Err(error);
-        }
+        archive_entry.serialize(&mut output)?
     }
 
     Ok(())
