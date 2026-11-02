@@ -4,16 +4,17 @@ use std::path::PathBuf;
 use crate::archive::ArchiveFormat;
 
 pub fn decode_archive(paths: Vec<PathBuf>) -> Result<(), Error> {
-    let output_folder_name = "out";
-
-    match create_dir(output_folder_name) {
-        Ok(_) => {}
-        Err(error) => {
-            return Err(error);
-        }
-    };
-
     for path in paths {
+        let output_folder_name = path.file_name().unwrap_or_else(|| "out".as_ref()).to_str()
+            .unwrap().replace(".zrs", "");
+
+        match create_dir(output_folder_name.clone()) {
+            Ok(_) => {}
+            Err(error) => {
+                return Err(error);
+            }
+        };
+
         let input = match File::open(path.as_path()) {
             Ok(file) => file,
             Err(error) => {
