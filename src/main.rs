@@ -5,7 +5,6 @@ mod encode;
 mod decode;
 
 
-use std::io::{Read, Write};
 use std::path::{PathBuf};
 use clap::{Parser, Subcommand};
 use crate::decode::{decode_archive};
@@ -21,24 +20,32 @@ struct Cli {
 #[derive(Subcommand)]
 enum Command {
     Encode {
+        #[arg(required = true)]
         input: Vec<PathBuf>,
+
+        #[arg(short, long)]
+        out: Option<PathBuf>,
     },
     Decode {
+        #[arg(required = true)]
         input: Vec<PathBuf>,
+
+        #[arg(short, long)]
+        out: Option<PathBuf>,
     },
 }
 fn main() {
     let cli = Cli::parse();
 
     match cli.command {
-        Command::Encode { input } => {
-           match encode_archive(input) {
+        Command::Encode { input, out } => {
+           match encode_archive(input, out) {
                Err(err) => println!("failed to encode ZRS archive: {}", err),
                _ => { println!("Encoded")}
            }
         }
 
-        Command::Decode { input } => {
+        Command::Decode { input, out } => {
             match decode_archive(input) {
                 Err(err) => println!("failed to decode ZRS archive: {}", err),
                 _ => { println!("Decoded")}
