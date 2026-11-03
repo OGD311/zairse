@@ -30,12 +30,10 @@ pub fn decode_archive(paths: Vec<PathBuf>) -> Result<(), Error> {
         }
 
         for file_data in archive_entries {
-            let output_path = Path::new(&output_folder_name).join(&file_data.filename);
-            if let Some(parent) = output_path.parent() {
-                create_dir_all(parent)?;
-            }
-            let mut output = File::create(output_folder_name.to_string() + "/" + &*file_data.filename)?;
+            let output_path = Path::new(&output_folder_name).join(&file_data.file_path);
+            create_dir_all(output_path.clone())?;
 
+            let mut output = File::create(output_folder_name.to_string() + "/" + &*file_data.file_path + "/" + &*file_data.file_name)?;
 
             output.write(file_data.contents.unwrap().as_slice())?;
         }
