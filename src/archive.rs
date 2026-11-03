@@ -1,6 +1,6 @@
-use std::fmt::format;
 use std::fs::{metadata, Metadata};
 use std::io::{Error, Read, Write};
+use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use jiff::Timestamp;
 
@@ -8,6 +8,7 @@ use jiff::Timestamp;
 pub struct ArchiveFormat {
     pub(crate) file_name: String,
     pub(crate) file_path: String,
+    pub(crate) permissions: u32,
     pub(crate) file_size: u64,
     pub(crate) contents: Option<Vec<u8>>,
 }
@@ -26,8 +27,9 @@ impl ArchiveFormat {
         writer.write_all(&file_path_len.to_le_bytes())?;
         writer.write_all(&file_path)?;
 
+        writer.write_all(&self.permissions.to_le_bytes())?;
         writer.write_all(&self.file_size.to_le_bytes())?;
-        
+
         match &self.contents {
             Some(contents) => {
                 writer.write_all(&contents.len().to_le_bytes())?;
@@ -61,6 +63,11 @@ impl ArchiveFormat {
 
         let file_path = String::from_utf8(file_path_bytes);
 
+        // Permissions
+        let mut permissions_bytes = [0u8; 4];
+        reader.read_exact(&mut permissions_bytes)?;
+        let permissions = u32::from_le_bytes(permissions_bytes);
+
         // FileSize
         let mut file_size_bytes = [0u8; 8];
         reader.read_exact(&mut file_size_bytes)?;
@@ -78,6 +85,7 @@ impl ArchiveFormat {
         Ok(ArchiveFormat {
             file_name: file_name.unwrap(),
             file_path: file_path.unwrap(),
+            permissions: permissions,
             file_size: file_size,
             contents: contents.into(),
         })
@@ -102,9 +110,13 @@ pub fn build_archive_entry(file: &Path) -> Result<ArchiveFormat, Error> {
         .map(|(path, _)| path)
         .unwrap_or("");
 
+
+    let permissions = file.metadata()?.permissions().mode();
+
     Ok(ArchiveFormat {
         file_name: file_name.to_string(),
         file_path: file_path.to_string(),
+        permissions: permissions,
         file_size: file_metadata.len(),
         contents: None,
     })
