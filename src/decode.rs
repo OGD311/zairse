@@ -1,5 +1,6 @@
-use std::fs::{create_dir, File, create_dir_all};
+use std::fs::{create_dir, File, create_dir_all, Permissions};
 use std::io::{BufReader, Error, Read, Write};
+use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use jiff::Timestamp;
 use crate::archive::ArchiveFormat;
@@ -34,8 +35,9 @@ pub fn decode_archive(paths: Vec<PathBuf>) -> Result<(), Error> {
             create_dir_all(output_path.clone())?;
 
             let mut output = File::create(output_folder_name.to_string() + "/" + &*file_data.file_path + "/" + &*file_data.file_name)?;
-
             output.write(file_data.contents.unwrap().as_slice())?;
+            output.flush()?;
+            output.set_permissions(Permissions::from_mode(file_data.permissions))?;
         }
     }
 
