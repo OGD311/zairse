@@ -1,6 +1,6 @@
-use std::fs::{create_dir, File};
+use std::fs::{create_dir, File, create_dir_all};
 use std::io::{BufReader, Error, Read, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use jiff::Timestamp;
 use crate::archive::ArchiveFormat;
 
@@ -13,19 +13,8 @@ pub fn decode_archive(paths: Vec<PathBuf>) -> Result<(), Error> {
                 .strftime("%Y%m%d-%H%M")));
 
 
-        match create_dir(output_folder_name.clone()) {
-            Ok(_) => {}
-            Err(error) => {
-                return Err(error);
-            }
-        };
-
-        let input = match File::open(path.as_path()) {
-            Ok(file) => file,
-            Err(error) => {
-                return Err(error);
-            }
-        };
+        create_dir(output_folder_name.clone())?;
+        let input = File::open(path.as_path())?;
 
         let mut reader = BufReader::new(input);
 
@@ -41,12 +30,12 @@ pub fn decode_archive(paths: Vec<PathBuf>) -> Result<(), Error> {
         }
 
         for file_data in archive_entries {
-            let mut output = match File::create(output_folder_name.to_string() + "/" + &*file_data.filename) {
-                Ok(file) => file,
-                Err(error) => {
-                    return Err(error);
-                }
-            };
+            let output_path = Path::new(&output_folder_name).join(&file_data.filename);
+            if let Some(parent) = output_path.parent() {
+                create_dir_all(parent)?;
+            }
+            let mut output = File::create(output_folder_name.to_string() + "/" + &*file_data.filename)?;
+
 
             output.write(file_data.contents.unwrap().as_slice())?;
         }
